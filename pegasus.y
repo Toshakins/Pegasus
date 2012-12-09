@@ -7,8 +7,6 @@
   
   /* Locations */
   #define YYLTYPE int              /* the type of locations */
-  #define cool_yylloc curr_lineno  /* use the curr_lineno from the lexer
-  for the location of tokens */
     
     extern int node_lineno;          /* set before constructing a tree node
     to whatever you want the line number
@@ -33,15 +31,12 @@
 
 %union{
     char*  	ival;
-    void*  	pval;
 }
-%token A B C D E H L
-%token SP MOV XCHG ADI ACI ANA
+
+%token REG MOV XCHG ADI ACI ANA
 %token RLC JNC INR CMA HLT NOP
 
-%token <ival> DEC
-%token <ival> BIN
-%token <ival> HEX
+%token <ival> NUM
 
 %%
 
@@ -64,10 +59,13 @@ directive:
 {DBs[$1] = atoi($3); SETLOC(@$, @1);};
 
 commands:
-ID ':' command
-{}
+|commands ID ':' command
+{
+if (!pointers[$2])
+  pointers[$2] = commands.length; SETLOC(@$, @2);
+}
 commands command
-{};
+{SETLOC(@$, @2);};
 
 command
 :MOV REG ',' REG
