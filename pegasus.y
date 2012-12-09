@@ -1,8 +1,3 @@
-/*
-*  cool.y
-*              Parser definition for the COOL language.
-*
-*/
 %{
   #include <iostream>
   #include "utilites.h"
@@ -40,20 +35,14 @@
     char*  	ival;
     void*  	pval;
 }
-%token A 258 B 259 C 260 D 261 E 264 H 265 L 266
-%token SP 267 MOV 268 XCHG 269 ADI 270 ACI 271 ANA 272
-%token RLC 273 JNC 274 INR 275 CMA 276 HLT 277 NOP 278
-
+%token A B C D E H L
+%token SP MOV XCHG ADI ACI ANA
+%token RLC JNC INR CMA HLT NOP
 
 %token <ival> DEC
 %token <ival> BIN
 %token <ival> HEX
 
-%type <ival>	program
-%type <ival>	directives
-%type <ival>	directive
-%type <ival>	commands
-%type <ival>	command
 %%
 
 program
