@@ -1,7 +1,7 @@
 #include <vector>
 #include <map>
 
-vector<uint8_t> commands;
+vector<uint8_t> ops;
 map<string, uint8_t> consts;
 map<string, uint8_t> DBs;
 map<string, uint16_t> DDs;
@@ -10,7 +10,7 @@ map<string, uint16_t> pointers;
 uint8_t mov(char x, char y)
 {
 	uint8_t opcode;
-	switch toupper(x):
+	switch (toupper(x))
 	{
 		case 'B': {opcode = 0x40; break;}
 		case 'C': {opcode = 0x48; break;}

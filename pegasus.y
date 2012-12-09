@@ -32,42 +32,41 @@
 %}
 
 %union{
-    char*  	ival;
+    char*   ival;
 }
 
-%token REG MOV XCHG ADI ACI ANA
-%token RLC JNC INR CMA HLT NOP
+%token MOV XCHG ADI ACI ANA EQU
+%token RLC JNC INR CMA HLT NOP DB DD
 
-%token <ival> NUM
+%token <ival> NUM ID
+%token <reg>  REG
 
 %%
 
 program
-:directives 
-{@$ = @1;}
-|commands
+:commands
 {@$ = @1;};
 
-directives: {}
-|directives directive
-{SETLOC(@$, @2)};
-
-directive:
-|ID EQU NUM
-{consts[$1] = atoi($3); SETLOC(@$, @1);}
-|ID DD NUM
-{DDs[$1] = atoi($3); SETLOC(@$, @1);}
-|ID DB NUM
-{DBs[$1] = atoi($3); SETLOC(@$, @1);};
-
 commands:
-|commands ID ':' command
+|ID ':' command commands 
 {
-if (!pointers[$2])
-  pointers[$2] = commands.length; SETLOC(@$, @2);
+if (!pointers[$1])
+  pointers[$1] = ops.length; SETLOC(@$, @1);
 }
-commands command
-{SETLOC(@$, @2);};
+|ID ':' DD NUM commands
+{
+  DDs[$1] = atoi($4); SETLOC(@$, @1);
+}
+|ID ':' DB NUM commands
+{
+  DDs[$1] = atoi($4); SETLOC(@$, @1);
+}
+|ID EQU NUM commands
+{
+  consts[$1] = atoi($3); SETLOC(@$, @1);
+}
+|command commands
+{SETLOC(@$, @1);};
 
 command
 :MOV REG ',' REG
@@ -75,42 +74,42 @@ command
     tmp = mov($2, $4);
     if (tmp)
     {
-        commands.push_back(tmp;)
+        ops.push_back(tmp;)
     }
     SETLOC(@$, @1);
 }
 |XCHG
-{commands.push_back(0xEB); SETLOC(@$, @1);}
+{ops.push_back(0xEB); SETLOC(@$, @1);}
 |ADI NUM
 {
-    commands.push_back(0xC6);
-    commands.push_back(atoi($2));
+    ops.push_back(0xC6);
+    ops.push_back(atoi($2));
     SETLOC(@$, @1);
 }
 |ADI ID
 {
-    commands.push_back(0xC6);
+    ops.push_back(0xC6);
     //super efficient
     p = consts[$2] ? consts[$2] : DBs[$2];
     if (p)
     {
-        commands.push_back(*p);
+        ops.push_back(*p);
     }
     SETLOC(@$, @1);
 }
 |ACI NUM
 {
-    commands.push_back(0xCE);
-    commands.push_back(atoi($2));
+    ops.push_back(0xCE);
+    ops.push_back(atoi($2));
     SETLOC(@$, @1);
 }
 |ACI ID
 {
-    commands.push_back(0xCE);
+    ops.push_back(0xCE);
     p = consts[$2] ? consts[$2] : DBs[$2];
     if (p)
     {
-        commands.push_back(*p);
+        ops.push_back(*p);
     }
     SETLOC(@$, @1);
 }
@@ -118,41 +117,41 @@ command
 {
     tmp = ana($2);
     if (tmp)
-        commands.push_back(tmp);
+        ops.push_back(tmp);
     SETLOC(@$, @1);
 }
 |RLC 
 {
-    commands.push_back(0x07);
+    ops.push_back(0x07);
     SETLOC(@$, @1);
 }
 |JNC ID
 {
     tmp = atoi($2);
-    commands.push_back(0xD2);
-    commands.push_back(tmp % 0xFF);
-    commands.push_back(tmp / 0xFF);
+    ops.push_back(0xD2);
+    ops.push_back(tmp % 0xFF);
+    ops.push_back(tmp / 0xFF);
 }
 |INR REG
 {
     tmp = inr($2);
     if (tmp)
-        commands.push_back(tmp);
+        ops.push_back(tmp);
     SETLOC(@$, @1);
 }
 |CMA
 {
-    commands.push_back(0x2F);
+    ops.push_back(0x2F);
     SETLOC(@$, @1);
 }
 |HLT
 {
-    commands.push_back(0x76);
+    ops.push_back(0x76);
     SETLOC(@$, @1);
 }
 |NOP
 {
-   commands.push_back(0x00);
+   ops.push_back(0x00);
    SETLOC(@$, @1);
 };
 
