@@ -57,11 +57,11 @@ directives: {}
 
 directive:
 |ID EQU NUM
-{}
+{consts[$1] = atoi($3); SETLOC(@$, @1);}
 |ID DD NUM
-{}
+{DDs[$1] = atoi($3); SETLOC(@$, @1);}
 |ID DB NUM
-{};
+{DBs[$1] = atoi($3); SETLOC(@$, @1);};
 
 commands:
 ID ':' command
