@@ -1,4 +1,4 @@
-название    кол-воаргументов    код                 кол-во байт     аргумент1   аргумент2   изменяемые флаги
+op      argument#               code                bytes           arg1        arg2        flags
 NOP         0                   0                   1               null        null        null
 HLT         0                   01110110            1               null        null        null
 XCHG        0                   11101011            1               null        null        null

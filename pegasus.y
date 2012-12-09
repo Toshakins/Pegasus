@@ -4,6 +4,8 @@
   
   extern char *curr_filename;
   
+  uint8_t tmp; //temporary variable
+  uint8_t *p;  //temporary pointer
   
   /* Locations */
   #define YYLTYPE int              /* the type of locations */
@@ -69,29 +71,90 @@ commands command
 
 command
 :MOV REG ',' REG
-{}
+{
+    tmp = mov($2, $4);
+    if (tmp)
+    {
+        commands.push_back(tmp;)
+    }
+    SETLOC(@$, @1);
+}
 |XCHG
-{}
+{commands.push_back(0xEB); SETLOC(@$, @1);}
 |ADI NUM
-{}
+{
+    commands.push_back(0xC6);
+    commands.push_back(atoi($2));
+    SETLOC(@$, @1);
+}
 |ADI ID
-{}
+{
+    commands.push_back(0xC6);
+    //super efficient
+    p = consts[$2] ? consts[$2] : DBs[$2];
+    if (p)
+    {
+        commands.push_back(*p);
+    }
+    SETLOC(@$, @1);
+}
+|ACI NUM
+{
+    commands.push_back(0xCE);
+    commands.push_back(atoi($2));
+    SETLOC(@$, @1);
+}
 |ACI ID
-{}
+{
+    commands.push_back(0xCE);
+    p = consts[$2] ? consts[$2] : DBs[$2];
+    if (p)
+    {
+        commands.push_back(*p);
+    }
+    SETLOC(@$, @1);
+}
 |ANA REG
-{}
+{
+    tmp = ana($2);
+    if (tmp)
+        commands.push_back(tmp);
+    SETLOC(@$, @1);
+}
 |RLC 
-{}
+{
+    commands.push_back(0x07);
+    SETLOC(@$, @1);
+}
 |JNC ID
-{}
+{
+    tmp = atoi($2);
+    commands.push_back(0xD2);
+    commands.push_back(tmp % 0xFF);
+    commands.push_back(tmp / 0xFF);
+}
 |INR REG
-{}
+{
+    tmp = inr($2);
+    if (tmp)
+        commands.push_back(tmp);
+    SETLOC(@$, @1);
+}
 |CMA
-{}
+{
+    commands.push_back(0x2F);
+    SETLOC(@$, @1);
+}
 |HLT
-{}
+{
+    commands.push_back(0x76);
+    SETLOC(@$, @1);
+}
 |NOP
-{};
+{
+   commands.push_back(0x00);
+   SETLOC(@$, @1);
+};
 
 
 %%
