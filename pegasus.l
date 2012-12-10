@@ -46,7 +46,6 @@ IDEN        {yylval.idval = yytext; return ID;}
 (?i:XCHG)   {return XCHG;}
 (?i:ADI)    {return ADI;}
 (?i:ACI)    {return ACI;}
-(?i:ACI)    {return ACI;}
 (?i:ANA)    {return ANA;}
 (?i:EQU)    {return EQU;}
 (?i:RLC)    {return RLC;}
