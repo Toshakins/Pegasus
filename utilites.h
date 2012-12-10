@@ -2,9 +2,11 @@
 #include <map>
 
 vector<uint8_t> ops;
+//to search for unknown labels further in program
+vector<string> lookup;
 map<string, uint8_t> consts;
-map<string, uint8_t> DBs;
-map<string, uint16_t> DDs;
+map<string, uint8_t> MEM;
+//points to address in bin file
 map<string, uint16_t> pointers;
 
 uint8_t mov(char x, char y)
@@ -29,7 +31,11 @@ uint8_t mov(char x, char y)
 		case 'E': {opcode += 3; break;}
 		case 'H': {opcode += 4; break;}
 		case 'L': {opcode += 5; break;}
-		case 'M': {opcode += 6; break;}
+		case 'M': {
+			if (opcode == 0x70)
+				return 0;
+			opcode += 6; break;
+		}
 		case 'A': {opcode += 7; break;}
 		default: {return 0;}
 	}

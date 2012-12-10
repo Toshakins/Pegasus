@@ -59,16 +59,18 @@ commands:
 |ID ':' command commands 
 {
 if (!pointers[$1])
-  pointers[$1] = ops.length(); SETLOC(@$, @1);
+  pointers[$1] = ops.length() + memlen - 2; SETLOC(@$, @1);//WARNING
 }
 |ID ':' DD NUM commands
 {
-  DDs[$1] = $4;
+  MEM[$1] = $4;
+  pointers[$1] = MEM.length() - 1;
   SETLOC(@$, @1);
 }
 |ID ':' DB NUM commands
 {
-  DBs[$1] = $4;
+  MEM[$1] = $4;
+  pointers[$1] = MEM.length() - 1;
   SETLOC(@$, @1);
 }
 |ID EQU NUM commands
@@ -100,7 +102,7 @@ command
 {
     ops.push_back(0xC6);
     //super efficient
-    p = consts[$2] ? consts[$2] : DBs[$2];
+    p = consts[$2] ? consts[$2] : MEM[$2];
     if (p)
     {
         ops.push_back(*p);
@@ -110,17 +112,7 @@ command
 |ACI NUM
 {
     ops.push_back(0xCE);
-    ops.push_back($2);
-    SETLOC(@$, @1);
-}
-|ACI ID
-{
-    ops.push_back(0xCE);
-    p = consts[$2] ? consts[$2] : DBs[$2];
-    if (p)
-    {
-        ops.push_back(*p);
-    }
+    ops.push_back(atoi($2) % 256);
     SETLOC(@$, @1);
 }
 |ANA REG
@@ -135,12 +127,16 @@ command
     ops.push_back(0x07);
     SETLOC(@$, @1);
 }
-|JNC ID
+|JNC NUM
 {
     tmp = atoi($2);
     ops.push_back(0xD2);
     ops.push_back(tmp % 0xFF);
     ops.push_back(tmp / 0xFF);
+}
+|JNC ID
+{
+
 }
 |INR REG
 {
@@ -199,23 +195,17 @@ int main(int argc, char* argv[])
   ofstream fout;
   fout.open(argv[2], ios::bin | ios::out);
   int i = 0;
-  map<string, uint16_t>::iterator it16 = DDs.begin();
-  for (;it16 != DDs.end(); it16++)
+  map<string, uint8_t>::iterator it8 = MEM.begin();
+  for (;it8 != MEM.end(); it8++)
   {
       ++i;
-      fout << it16.second;
-  }
-  map<string, uint8_t>::iterator it8 = DBs.begin();
-  for (;it8 != DBs.end(); it8++)
-  {
-      ++i;
-      fout << it8.second;
+      fout << (uint8_t)(*it8).second;
   }
   it8 = consts.begin();
   for (;it8 != consts.end(); it8++)
   {
       ++i;
-      fout << it8.second;
+      fout << (uint8_t)(*it8).second;
   }
   if (i > memlen)
   {
@@ -228,7 +218,7 @@ int main(int argc, char* argv[])
   //commands write acquired now
   for (i = 0; i < commands.length(); ++i)
   {
-
+      fout << commands[j];
   }
   return 0;
 }
