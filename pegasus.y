@@ -4,6 +4,8 @@
   FILE *fin;
   
   extern char *curr_filename;
+
+  const uint16_t memlen = 1024;
   
   uint8_t tmp; //temporary variable
   uint8_t *p;  //temporary pointer
@@ -61,11 +63,13 @@ if (!pointers[$1])
 }
 |ID ':' DD NUM commands
 {
-  DDs[$1] = $4; SETLOC(@$, @1);
+  DDs[$1] = $4;
+  SETLOC(@$, @1);
 }
 |ID ':' DB NUM commands
 {
-  DDs[$1] = $4; SETLOC(@$, @1);
+  DBs[$1] = $4;
+  SETLOC(@$, @1);
 }
 |ID EQU NUM commands
 {
@@ -192,4 +196,39 @@ int main(int argc, char* argv[])
     yyparse();
   } while (!feof(yyin));
   //output to binary here:
+  ofstream fout;
+  fout.open(argv[2], ios::bin | ios::out);
+  int i = 0;
+  map<string, uint16_t>::iterator it16 = DDs.begin();
+  for (;it16 != DDs.end(); it16++)
+  {
+      ++i;
+      fout << it16.second;
+  }
+  map<string, uint8_t>::iterator it8 = DBs.begin();
+  for (;it8 != DBs.end(); it8++)
+  {
+      ++i;
+      fout << it8.second;
+  }
+  it8 = consts.begin();
+  for (;it8 != consts.end(); it8++)
+  {
+      ++i;
+      fout << it8.second;
+  }
+  if (i > memlen)
+  {
+    cerr << "Out of mysterious 1024 bound\n";
+    return -1;
+  }
+  for (int j = i; j < memlen; ++j)
+  //fill up with zeros
+      fout << 0x00;
+  //commands write acquired now
+  for (i = 0; i < commands.length(); ++i)
+  {
+
+  }
+  return 0;
 }
