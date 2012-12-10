@@ -2,14 +2,16 @@
   #include <iostream>
   #include "utilites.h"
   FILE *fin;
+
+  using namespace std;
   
   extern char *curr_filename;
 
   const uint16_t memlen = 1024;
   
   uint8_t tmp; //temporary variable
-  uint8_t *p;  //temporary pointer
-  uint16t *addr;
+  uint8_t *p;  //temporary pointerr;
+
   
   /* Locations */
   #define YYLTYPE int              /* the type of locations */
@@ -129,14 +131,25 @@ command
 }
 |JNC NUM
 {
-    tmp = atoi($2);
+    uint16t t = atoi($2);
     ops.push_back(0xD2);
-    ops.push_back(tmp % 0xFF);
-    ops.push_back(tmp / 0xFF);
+    ops.push_back(t % 0xFF);
+    ops.push_back(t / 0xFF);
 }
 |JNC ID
 {
-
+    uint16t t = consts[$2] ? consts[$2] : MEM[$2];
+    ops.push_back(0xD2);
+    if (t % 255)
+    {
+        ops.push_back(t % 255);
+        ops.push_back(t / 255);
+    }
+    else{
+        lookup[$2].push_back(ops.length());
+        ops.push_back(0x00);
+        ops.push_back(0x00);
+    }
 }
 |INR REG
 {
@@ -191,6 +204,29 @@ int main(int argc, char* argv[])
   do {
     yyparse();
   } while (!feof(yyin));
+  //check lookup table:
+  map<string, std::vector<uint16_t> >::iterator lookupit;
+  string lkpKey;
+  uint16_t addr;
+  for (it = lookup.begin(); it != lookup.end(); it++)
+  {
+    lkpKey = (*it).first;
+    addr = MEM[lkpKey] ? MEM[lkpKey] : consts[lkpKey];
+    if (addr)
+    {
+        //processing with addresses in opcodes
+        for (std::vector<uint16_t>::iterator j = (*it).second.begin(); j != (*it).second.end(); ++j)
+        {
+            ops[*j] = addr % 255;
+            ops[*j + 1] = addr / 255;
+        }
+    }
+    else{
+        cerr << "Can't found address at" << lkpKey << endl;
+        return -1;
+    }
+  }
+
   //output to binary here:
   ofstream fout;
   fout.open(argv[2], ios::bin | ios::out);

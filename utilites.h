@@ -3,7 +3,7 @@
 
 vector<uint8_t> ops;
 //to search for unknown labels further in program
-vector<string> lookup;
+map<string, vector<uint16_t> > lookup;
 map<string, uint8_t> consts;
 map<string, uint8_t> MEM;
 //points to address in bin file
