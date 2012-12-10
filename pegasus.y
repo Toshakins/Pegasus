@@ -1,11 +1,13 @@
 %{
   #include <iostream>
   #include "utilites.h"
+  FILE *fin;
   
   extern char *curr_filename;
   
   uint8_t tmp; //temporary variable
   uint8_t *p;  //temporary pointer
+  uint16t *addr;
   
   /* Locations */
   #define YYLTYPE int              /* the type of locations */
@@ -32,14 +34,18 @@
 %}
 
 %union{
-    char*   ival;
+    char*   idval;
+    char    rval;
+    uint16t ival;
 }
 
 %token MOV XCHG ADI ACI ANA EQU
 %token RLC JNC INR CMA HLT NOP DB DD
 
-%token <ival> NUM ID
-%token <reg>  REG
+
+%token <idval> ID
+%token <rval>  REG
+%token <ival>  NUM
 
 %%
 
@@ -51,19 +57,19 @@ commands:
 |ID ':' command commands 
 {
 if (!pointers[$1])
-  pointers[$1] = ops.length; SETLOC(@$, @1);
+  pointers[$1] = ops.length(); SETLOC(@$, @1);
 }
 |ID ':' DD NUM commands
 {
-  DDs[$1] = atoi($4); SETLOC(@$, @1);
+  DDs[$1] = $4; SETLOC(@$, @1);
 }
 |ID ':' DB NUM commands
 {
-  DDs[$1] = atoi($4); SETLOC(@$, @1);
+  DDs[$1] = $4; SETLOC(@$, @1);
 }
 |ID EQU NUM commands
 {
-  consts[$1] = atoi($3); SETLOC(@$, @1);
+  consts[$1] = $3; SETLOC(@$, @1);
 }
 |command commands
 {SETLOC(@$, @1);};
@@ -83,7 +89,7 @@ command
 |ADI NUM
 {
     ops.push_back(0xC6);
-    ops.push_back(atoi($2));
+    ops.push_back($2);
     SETLOC(@$, @1);
 }
 |ADI ID
@@ -100,7 +106,7 @@ command
 |ACI NUM
 {
     ops.push_back(0xCE);
-    ops.push_back(atoi($2));
+    ops.push_back($2);
     SETLOC(@$, @1);
 }
 |ACI ID
@@ -158,13 +164,32 @@ command
 
 %%
 void yyerror(char *s)
-    {
-      extern int curr_lineno;
-      
-      cerr << "\"" << curr_filename << "\", line " << curr_lineno << ": " \
-      << s << " at or near " << yychar;
-      cerr << endl;
-      omerrs++;
-      
-      if(omerrs>50) {fprintf(stdout, "More than 50 errors\n"); exit(1);}
-    }
+  {
+    extern int curr_lineno;
+    
+    cerr << "\"" << curr_filename << "\", line " << curr_lineno << ": " \
+    << s << " at or near " << yychar;
+    cerr << endl;
+    omerrs++;
+    
+    if(omerrs>50) {fprintf(stdout, "More than 50 errors\n"); exit(1);}
+  }
+
+int main(int argc, char* argv[])
+{
+  // open a file handle to a particular file:
+  fin = fopen(argv[1], "r");
+  // make sure it's valid:
+  if (!fin) {
+    cout << "I can't open file!" << endl;
+    return -1;
+  }
+  // set lex to read from it instead of defaulting to STDIN:
+  yyin = fin;
+
+  // parse through the input until there is no more:
+  do {
+    yyparse();
+  } while (!feof(yyin));
+  //output to binary here:
+}
