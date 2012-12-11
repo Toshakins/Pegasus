@@ -24,6 +24,7 @@
 }
 
 %token ERROR LDA STAX ADC ORA
+%token RAL JP SP DCX
 %token <rval> REG;
 %token <val16> NUM;
 %token <idval> ID
@@ -64,6 +65,32 @@ command
 |ORA REG
 {
     ops.push_back(ora($2));
+}
+|RAL
+{
+    ops.push_back(0x17);
+}
+|JP NUM
+{
+    ops.push_back(0xF2);
+    unsigned short t = $2;
+    ops.push_back(t % 256);
+    ops.push_back(t / 256);
+}
+|JP ID
+{
+    //TODO
+}
+|DCX REG
+{
+    unsigned char t = dcx($2);
+    if (t)
+        ops.push_back(t);
+    else YYERROR;
+}
+|DCX SP
+{
+    ops.push_back(0x3B);
 };
 %%
 int main(int argc, char **argv)

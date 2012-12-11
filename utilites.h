@@ -29,3 +29,14 @@ unsigned char ora(char c)
 		case 'A':{return 0xB7;}
 	}
 }
+
+unsigned char dcx(char c)
+{
+	switch (toupper(c))
+	{
+		case 'B':{return 0x0B;}
+		case 'D':{return 0x1B;}
+		case 'H':{return 0x2B;}
+		default:{return 0;}
+	}
+}
