@@ -1,7 +1,7 @@
 %{
 
     #include <iostream>
-    //#include "utilites.h"
+    #include "utilites.h"
     #include <cstdio>
     #include <vector>
     #include <fstream>    
@@ -23,7 +23,7 @@
     char* idval;
 }
 
-%token ERROR LDA STAX
+%token ERROR LDA STAX ADC ORA
 %token <rval> REG;
 %token <val16> NUM;
 %token <idval> ID
@@ -56,6 +56,14 @@ command
         ops.push_back(0x02);
     if (ch == 'H')
         ops.push_back(0x12);
+}
+|ADC REG
+{
+    ops.push_back(adc($2));
+}
+|ORA REG
+{
+    ops.push_back(ora($2));
 };
 %%
 int main(int argc, char **argv)
