@@ -1,6 +1,7 @@
 %{
 #include "pegasus.tab.h"
 #include <cstdlib>
+#include <stdint.h>
 
 /* The compiler assumes these identifiers. */
 
@@ -38,8 +39,8 @@ REGISTER (?i:[abcdehlm])
 
 ;.*         ; //single-line comments
 DEC         {yylval.ival = atoi(yytext); return NUM;}
-BIN         {yylval.ival = strtoul(yytext, null, 2); return NUM;}
-HEX         {yylval.ival = strtoul(yytext, null, 16); return NUM;}
+BIN         {yylval.ival = strtoul(yytext, NULL, 2); return NUM;}
+HEX         {yylval.ival = strtoul(yytext, NULL, 16); return NUM;}
 REGISTER    {yylval.rval = *yytext; return REG;}
 IDEN        {yylval.idval = yytext; return ID;}
 (?i:MOV)    {return MOV;}
@@ -56,5 +57,7 @@ IDEN        {yylval.idval = yytext; return ID;}
 (?i:NOP)    {return NOP;}
 (?i:DD)     {return DD;}
 (?i:DB)     {return DB;}
+[ \t]       ;
 \n          {++curr_lineno;}
 (","|":")   {return *yytext;}
+.           {yylval.error_msg = yytext; return ERROR;}

@@ -1,16 +1,37 @@
 %{
   #include <iostream>
   #include "utilites.h"
-  FILE *fin;
+  #include <vector>
+  #include <map>
+  #include <cstdio>
+  #include <fstream>
 
   using namespace std;
-  
-  extern char *curr_filename;
+
+  extern FILE * yyin;
+
+  int omerrs = 0;//num of errors
+
+  typedef unsigned short uint16_t;
+  typedef unsigned char uint8_t;
+
+  vector<uint8_t> ops;
+  //to search for unknown labels further in program
+  map<string, vector<uint16_t> > lookup;
+  map<string, uint8_t> consts;
+  map<string, uint8_t> MEM;
+  //points to address in bin file
+  map<string, uint16_t> pointers;
+
+  FILE *fin;
+
+  extern uint8_t inr(char r);
+  extern uint8_t ana(char r);
+  extern uint8_t mov(char x, char y);
 
   const uint16_t memlen = 1024;
   
-  uint8_t tmp; //temporary variable
-  uint8_t *p;  //temporary pointerr;
+  uint8_t tmp; //temporary variables
 
   
   /* Locations */
@@ -40,7 +61,8 @@
 %union{
     char*   idval;
     char    rval;
-    uint16t ival;
+    unsigned short ival;
+    char*   error_msg;
 }
 
 %token MOV XCHG ADI ACI ANA EQU
@@ -50,6 +72,7 @@
 %token <idval> ID
 %token <rval>  REG
 %token <ival>  NUM
+%token <error_msg> ERROR
 
 %%
 
@@ -61,18 +84,18 @@ commands:
 |ID ':' command commands 
 {
 if (!pointers[$1])
-  pointers[$1] = ops.length() + memlen - 2; SETLOC(@$, @1);//WARNING
+  pointers[$1] = ops.size() + memlen - 2; SETLOC(@$, @1);//WARNING
 }
 |ID ':' DD NUM commands
 {
   MEM[$1] = $4;
-  pointers[$1] = MEM.length() - 1;
+  pointers[$1] = MEM.size() - 1;
   SETLOC(@$, @1);
 }
 |ID ':' DB NUM commands
 {
   MEM[$1] = $4;
-  pointers[$1] = MEM.length() - 1;
+  pointers[$1] = MEM.size() - 1;
   SETLOC(@$, @1);
 }
 |ID EQU NUM commands
@@ -88,7 +111,7 @@ command
     tmp = mov($2, $4);
     if (tmp)
     {
-        ops.push_back(tmp;)
+        ops.push_back(tmp);
     }
     SETLOC(@$, @1);
 }
@@ -104,17 +127,17 @@ command
 {
     ops.push_back(0xC6);
     //super efficient
-    p = consts[$2] ? consts[$2] : MEM[$2];
-    if (p)
+    tmp = consts[$2] ? consts[$2] : MEM[$2];
+    if (tmp)
     {
-        ops.push_back(*p);
+        ops.push_back(tmp);
     }
     SETLOC(@$, @1);
 }
 |ACI NUM
 {
     ops.push_back(0xCE);
-    ops.push_back(atoi($2) % 256);
+    ops.push_back($2 % 256);
     SETLOC(@$, @1);
 }
 |ANA REG
@@ -131,14 +154,14 @@ command
 }
 |JNC NUM
 {
-    uint16t t = atoi($2);
+    uint16_t t = $2 % 65536;
     ops.push_back(0xD2);
     ops.push_back(t % 0xFF);
     ops.push_back(t / 0xFF);
 }
 |JNC ID
 {
-    uint16t t = consts[$2] ? consts[$2] : MEM[$2];
+    uint16_t t = consts[$2] ? consts[$2] : MEM[$2];
     ops.push_back(0xD2);
     if (t % 255)
     {
@@ -146,7 +169,7 @@ command
         ops.push_back(t / 255);
     }
     else{
-        lookup[$2].push_back(ops.length());
+        lookup[$2].push_back(ops.size());
         ops.push_back(0x00);
         ops.push_back(0x00);
     }
@@ -180,12 +203,12 @@ void yyerror(char *s)
   {
     extern int curr_lineno;
     
-    cerr << "\"" << curr_filename << "\", line " << curr_lineno << ": " \
+    cerr << "\"" << "this file"<< "\", line " << curr_lineno << ": " \
     << s << " at or near " << yychar;
     cerr << endl;
     omerrs++;
     
-    if(omerrs>50) {fprintf(stdout, "More than 50 errors\n"); exit(1);}
+    if(omerrs>50) {cout << "More than 50 errors\n"; exit(1);}
   }
 
 int main(int argc, char* argv[])
@@ -208,7 +231,7 @@ int main(int argc, char* argv[])
   map<string, std::vector<uint16_t> >::iterator lookupit;
   string lkpKey;
   uint16_t addr;
-  for (it = lookup.begin(); it != lookup.end(); it++)
+  for (map<string, vector<uint16_t> >::iterator it = lookup.begin(); it != lookup.end(); it++)
   {
     lkpKey = (*it).first;
     addr = MEM[lkpKey] ? MEM[lkpKey] : consts[lkpKey];
@@ -228,9 +251,10 @@ int main(int argc, char* argv[])
   }
 
   //output to binary here:
-  ofstream fout;
-  fout.open(argv[2], ios::bin | ios::out);
-  int i = 0;
+  fstream fout;
+  fout.open(argv[2], fstream::binary | fstream::out);
+  int i = 1;
+  fout << 0x00; //magic byte, nobody can reference it
   map<string, uint8_t>::iterator it8 = MEM.begin();
   for (;it8 != MEM.end(); it8++)
   {
@@ -252,9 +276,9 @@ int main(int argc, char* argv[])
   //fill up with zeros
       fout << 0x00;
   //commands write acquired now
-  for (i = 0; i < commands.length(); ++i)
+  for (i = 0; i < ops.size(); ++i)
   {
-      fout << commands[j];
+      fout << ops[i];
   }
   return 0;
 }

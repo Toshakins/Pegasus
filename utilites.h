@@ -1,13 +1,7 @@
-#include <vector>
-#include <map>
+#include <cctype>
+#include <stdint.h>
 
-vector<uint8_t> ops;
-//to search for unknown labels further in program
-map<string, vector<uint16_t> > lookup;
-map<string, uint8_t> consts;
-map<string, uint8_t> MEM;
-//points to address in bin file
-map<string, uint16_t> pointers;
+int curr_lineno = 1, node_lineno = 1;
 
 uint8_t mov(char x, char y)
 {
