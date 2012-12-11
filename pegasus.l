@@ -14,6 +14,7 @@ using namespace std;
 (?i:[a-ehlm])       {yylval.rval = *yytext; return REG;}
 (?i:[a-z][a-z_])    {yylval.idval = yytext; return ID;}
 (?i:LDA)            {return LDA;}
+(?i:STAX)           {return STAX;}
 [ \t]               ;
 \n                  ;
 ","                 {cout<<*yytext<<endl;return *yytext;}

@@ -4,7 +4,8 @@
     //#include "utilites.h"
     #include <cstdio>
     #include <vector>
-    #include <fstream>        
+    #include <fstream>    
+    #include <cctype>    
 
     using namespace std;
 
@@ -22,7 +23,7 @@
     char* idval;
 }
 
-%token ERROR LDA
+%token ERROR LDA STAX
 %token <rval> REG;
 %token <val16> NUM;
 %token <idval> ID
@@ -41,6 +42,20 @@ command
     unsigned short t = $2;
     ops.push_back(t % 256);
     ops.push_back(t / 256);
+}
+|LDA ID
+{
+    //TODO
+}
+|STAX REG
+{
+    char ch = toupper($2);
+    if (ch != 'B' && ch != 'H')
+        YYERROR;
+    if (ch == 'B')
+        ops.push_back(0x02);
+    if (ch == 'H')
+        ops.push_back(0x12);
 };
 %%
 int main(int argc, char **argv)
@@ -61,5 +76,5 @@ int main(int argc, char **argv)
 }
 
 void yyerror(char *s) {
-
+    cerr << "OMG ERROR\n";
 }
