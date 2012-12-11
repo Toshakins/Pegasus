@@ -19,6 +19,9 @@ using namespace std;
 (?i:RAL)            {return RAL;}
 (?i:JP)             {return JP;}
 (?i:DCX)            {return DCX;}
+(?i:CMC)            {return CMC;}
+(?i:XCHG)           {return XCHG;}
+(?i:LDAX)           {return LDAX;}
 
 (?i:[a-z][a-z_])    {yylval.idval = yytext; return ID;}
 [ \t]               ;

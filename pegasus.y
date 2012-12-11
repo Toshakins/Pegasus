@@ -24,7 +24,8 @@
 }
 
 %token ERROR LDA STAX ADC ORA
-%token RAL JP SP DCX
+%token RAL JP SP DCX CMC XCHG
+%token LDAX
 %token <rval> REG;
 %token <val16> NUM;
 %token <idval> ID
@@ -91,6 +92,21 @@ command
 |DCX SP
 {
     ops.push_back(0x3B);
+}
+|CMC
+{
+    ops.push_back(0x3F);
+}
+|XCHG
+{
+    ops.push_back(0xEB);
+}
+|LDAX REG
+{
+    unsigned char t = ldax($2);
+    if(t)
+        ops.push_back(t);
+    else YYERROR;
 };
 %%
 int main(int argc, char **argv)

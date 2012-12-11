@@ -40,3 +40,13 @@ unsigned char dcx(char c)
 		default:{return 0;}
 	}
 }
+
+unsigned char ldax(char c)
+{
+	switch (toupper(c))
+	{
+		case 'B':{return 0x0A;}
+		case 'C':{return 0x1A;}
+		default:{return 0;}
+	}
+}
