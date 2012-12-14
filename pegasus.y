@@ -1,11 +1,11 @@
 %{
-
     #include <iostream>
     #include "utilites.h"
     #include <cstdio>
     #include <vector>
     #include <fstream>    
-    #include <cctype>    
+    #include <cctype>
+    #include <map>  
 
     using namespace std;
 
@@ -14,8 +14,29 @@
     void yyerror(char *s);        /*  defined below; called for each parse error */
 
     vector<unsigned char> ops;
+    map<string, unsigned short> definitions;
+    map<string, vector<unsigned short> > mentions;
+
+    void writeAddr(unsigned short position, unsigned short addr)
+    {
+        if (position == ops.size())
+            ops.push_back(addr % 256);
+        else 
+            {
+                ops[position] = addr % 256;
+            }
+        if (position + 1 == ops.size())
+        {
+            ops.push_back(addr / 256);
+        }
+        else 
+        {
+            ops[position + 1] = addr / 256;
+        }
+    }
     
 %}
+
 %union{
     char rval;
     unsigned short val16;
@@ -28,7 +49,7 @@
 %token LDAX
 %token <rval> REG;
 %token <val16> NUM;
-%token <idval> ID
+%token <idval> ID;
 %%
 
 program
@@ -36,7 +57,19 @@ program
 {@$ = @1;}
 
 commands:
-|commands command;
+|commands ID ':' command
+{
+    @$ = @2;
+    if (!definitions[$2])
+        definitions[$2] = ops.size();
+    else
+        YYERROR;
+}
+|commands command
+{
+    @$ = @2;
+};
+
 command
 :LDA NUM
 {
@@ -47,7 +80,16 @@ command
 }
 |LDA ID
 {
-    //TODO
+    ops.push_back(0x3A);
+    if (mentions[$2].size())
+    {
+        writeAddr(ops.size(), definitions[$2]);
+    }
+    else{
+        mentions[$2].push_back(ops.size());
+        ops.push_back(0);
+        ops.push_back(0);
+    }
 }
 |STAX REG
 {
@@ -117,15 +159,35 @@ int main(int argc, char **argv)
      do {
         yyparse();
     } while (!feof(yyin));
-    
+
+    typedef map<string, vector<unsigned short> >::iterator iter;
+    for (iter it = mentions.begin(); it != mentions.end(); ++it)
+    {
+        if (mentions[it->first].size())
+        {
+            for (int i = 0; i < it->second.size(); ++i)
+            {
+                writeAddr(mentions[it->first][i], definitions[it->first]);
+            }
+        }
+        else{
+            //YYERROR;
+        }
+    }
+
     fstream fout;
     fout.open(argv[2], fstream::binary | fstream::out);
     for (int i = 0; i < ops.size(); ++i)
     {
         fout << ops[i];
     }
+    for (std::map<string, unsigned short>::iterator i = definitions.begin();
+     i != definitions.end(); ++i)
+    {
+        cout << i->first << ' ' << i->second << endl;
+    }
 }
 
 void yyerror(char *s) {
-    cerr << "OMG ERROR\n";
+    cerr << " OMG ERROR\n";
 }
