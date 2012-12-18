@@ -25,6 +25,14 @@ int curr_lineno = 1;
 (?i:CMC)            {return CMC;}
 (?i:XCHG)           {return XCHG;}
 (?i:LDAX)           {return LDAX;}
+(?i:SHLD)           {return SHLD;}
+(?i:SUB)            {return SUB;}
+(?i:CMP)            {return CMP;}
+(?i:RAR)            {return RAR;}
+(?i:RLC)            {return RLC;}
+(?i:JM)             {return JM;}
+(?i:DCR)            {return DCR;}
+(?i:STC)            {return STC;}
 (?i:[a-z][a-z_]*)   {yylval.idval = stralloc(yytext); return ID;}
 \n                  {curr_lineno++;}
 ":"                 {return *yytext;}

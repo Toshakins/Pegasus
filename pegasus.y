@@ -50,7 +50,8 @@
 
 %token ERROR LDA STAX ADC ORA
 %token RAL JP SP DCX CMC XCHG
-%token LDAX
+%token LDAX SHLD SUB CMP RAR
+%token RLC JM DCR STC
 %token <rval> REG;
 %token <val16> NUM;
 %token <idval> ID;
@@ -67,7 +68,7 @@ commands:
     if (!definitions[$2])
         definitions[$2] = ops.size();
     else
-        YYERROR;
+        yyerror((char*) "syntax error");
 }
 |commands command
 {
@@ -99,7 +100,7 @@ command
 {
     char ch = toupper($2);
     if (ch != 'B' && ch != 'H')
-        YYERROR;
+        yyerror((char*) "syntax error");
     if (ch == 'B')
         ops.push_back(0x02);
     if (ch == 'H')
@@ -126,14 +127,23 @@ command
 }
 |JP ID
 {
-    //TODO
+    ops.push_back(0xF2);
+    if (mentions[$2].size())
+    {
+        writeAddr(ops.size(), definitions[$2]);
+    }
+    else{
+        mentions[$2].push_back(ops.size());
+        ops.push_back(0);
+        ops.push_back(0);
+    }
 }
 |DCX REG
 {
     unsigned char t = dcx($2);
     if (t)
         ops.push_back(t);
-    else YYERROR;
+    else yyerror((char*) "syntax error");
 }
 |DCX SP
 {
@@ -152,11 +162,86 @@ command
     unsigned char t = ldax($2);
     if(t)
         ops.push_back(t);
-    else YYERROR;
+    else yyerror((char*) "syntax error");
+}
+|SHLD NUM
+{
+    ops.push_back(0x22);
+    unsigned short t = $2;
+    ops.push_back(t % 256);
+    ops.push_back(t / 256);
+}
+|SHLD ID
+{
+    ops.push_back(0x22);
+    if (mentions[$2].size())
+    {
+        writeAddr(ops.size(), definitions[$2]);
+    }
+    else{
+        mentions[$2].push_back(ops.size());
+        ops.push_back(0);
+        ops.push_back(0);
+    }
+}
+|SUB REG 
+{
+    unsigned char t = sub($2);
+    if (t)
+        ops.push_back(t);
+    else yyerror((char*) "syntax error");
+}
+|CMP REG
+{
+    unsigned char t = cmp($2);
+    if (t)
+        ops.push_back(t);
+    else
+        yyerror((char*) "syntax error");
+}
+|RAR
+{
+    ops.push_back(0x1F);
+}
+|RLC
+{
+    ops.push_back(0x07);
+}
+|JM NUM
+{
+    ops.push_back(0xFA);
+    unsigned short t = $2;
+    ops.push_back(t % 256);
+    ops.push_back(t / 256);
+}
+|JM ID
+{
+    ops.push_back(0xFA);
+    if (mentions[$2].size())
+    {
+        writeAddr(ops.size(), definitions[$2]);
+    }
+    else{
+        mentions[$2].push_back(ops.size());
+        ops.push_back(0);
+        ops.push_back(0);
+    }
+}
+|DCR REG
+{
+    unsigned char t = dcr($2);
+    if(t)
+        ops.push_back(t);
+    else
+        yyerror((char*) "syntax error");
+}
+|STC
+{
+    ops.push_back(0x37);
 }
 |ERROR
 {
-    YYERROR;
+    yyerror((char*) "syntax error");
 };
 %%
 int main(int argc, char **argv)
@@ -197,5 +282,5 @@ int main(int argc, char **argv)
 }
 
 void yyerror(char *s) {
-    cerr << "Error near " << curr_lineno << " at " << yytext << endl;;
+    cerr << s << " near " << curr_lineno << " line at " << yytext << endl;;
 }
