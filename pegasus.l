@@ -4,10 +4,11 @@
 using namespace std;
 
 char* stralloc(const char* s);
+int curr_lineno = 1;
 %}
 
 %%
-;.*                 ;//eat up comments
+;.*\n               {curr_lineno++;}//eat up comments
 [ \f\r\t\v]+        ;
 (?i:[a-ehlm])       {yylval.rval = *yytext; return REG; }
 (?i:SP)             {return SP; }
@@ -25,9 +26,9 @@ char* stralloc(const char* s);
 (?i:XCHG)           {return XCHG;}
 (?i:LDAX)           {return LDAX;}
 (?i:[a-z][a-z_]*)   {yylval.idval = stralloc(yytext); return ID;}
-\n                  ;
+\n                  {curr_lineno++;}
 ":"                 {return *yytext;}
-.                   {cout <<"error"<<endl; return ERROR;}
+.                   {yylval.error_token = stralloc(yytext);return ERROR;}
 
 %% 
 

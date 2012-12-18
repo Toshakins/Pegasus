@@ -12,6 +12,9 @@
     extern int yylex();           /*  the entry point to the lexer  */
     extern FILE * yyin;
     void yyerror(char *s);        /*  defined below; called for each parse error */
+    extern int yychar;
+    extern int curr_lineno;
+    extern char* yytext;
 
     vector<unsigned char> ops;
     map<string, unsigned short> definitions;
@@ -42,6 +45,7 @@
     unsigned short val16;
     unsigned char val8;
     char* idval;
+    char* error_token;
 }
 
 %token ERROR LDA STAX ADC ORA
@@ -149,6 +153,10 @@ command
     if(t)
         ops.push_back(t);
     else YYERROR;
+}
+|ERROR
+{
+    YYERROR;
 };
 %%
 int main(int argc, char **argv)
@@ -189,5 +197,5 @@ int main(int argc, char **argv)
 }
 
 void yyerror(char *s) {
-    cerr << " OMG ERROR\n";
+    cerr << "Error near " << curr_lineno << " at " << yytext << endl;;
 }
